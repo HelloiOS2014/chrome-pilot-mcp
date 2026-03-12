@@ -1,0 +1,39 @@
+{
+  "name": "chrome-pilot-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for controlling an already-running Chrome via CDP",
+  "main": "dist/index.js",
+  "type": "module",
+  "bin": {
+    "chrome-pilot-mcp": "./dist/index.js"
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch",
+    "deploy": "npm run build && bash scripts/deploy.sh",
+    "uninstall": "bash scripts/uninstall.sh"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "puppeteer-core": "^24.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "chrome",
+    "cdp",
+    "puppeteer",
+    "automation"
+  ],
+  "author": "",
+  "license": "MIT"
+}
