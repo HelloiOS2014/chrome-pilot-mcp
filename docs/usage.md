@@ -8,11 +8,33 @@ Chrome Pilot MCP 通过 CDP 连接已运行的 Chrome，并将浏览器能力暴
 
 ## 前置条件
 
-### 1. Chrome 版本
+### 1. Node.js / npx
+
+`npx` 用于 Claude Code 启动 MCP 子进程。请先确认 Node.js 与 npx 可用（Node `>= 18`）：
+
+```bash
+node -v
+npx -v
+```
+
+如果缺失可按平台安装 Node.js（安装后会包含 npx）：
+
+```bash
+# macOS
+brew install node
+
+# Ubuntu / Debian
+sudo apt-get update && sudo apt-get install -y nodejs npm
+
+# Windows (PowerShell)
+winget install OpenJS.NodeJS.LTS
+```
+
+### 2. Chrome 版本
 
 需要 Chrome `>= 144`。
 
-### 2. 启用远程调试
+### 3. 启用远程调试
 
 在 Chrome 地址栏打开：
 
@@ -22,7 +44,7 @@ chrome://inspect/#remote-debugging
 
 启用后，Chrome 会写入 `DevToolsActivePort` 文件，其中包含调试端口和 WebSocket 路径。Chrome 重启后通常需要重新启用。
 
-### 3. DevToolsActivePort 路径
+### 4. DevToolsActivePort 路径
 
 | 平台 | 路径 |
 | --- | --- |
@@ -223,6 +245,22 @@ await chrome_reload({ ignore_cache: true });
 | `E999` | 内部错误 |
 
 ## 常见问题
+
+### Q: `claude mcp add` 成功但状态是 `Failed to connect`？
+
+先检查运行时依赖是否存在：
+
+```bash
+which npx
+npx -v
+node -v
+```
+
+再检查 MCP 运行配置和状态：
+
+```bash
+claude mcp get chrome-pilot
+```
 
 ### Q: 连接失败，提示 DevToolsActivePort 未找到？
 

@@ -58,6 +58,28 @@ npm start
 
 ## 前置条件
 
+### Node.js / npx
+
+`npx` 用于 Claude Code 启动 MCP 子进程。请先确认 Node.js 与 npx 可用（Node `>= 18`）：
+
+```bash
+node -v
+npx -v
+```
+
+如果缺失可按平台安装 Node.js（安装后会包含 npx）：
+
+```bash
+# macOS
+brew install node
+
+# Ubuntu / Debian
+sudo apt-get update && sudo apt-get install -y nodejs npm
+
+# Windows (PowerShell)
+winget install OpenJS.NodeJS.LTS
+```
+
 ### Chrome 版本
 
 需要 Chrome `>= 144`，以支持通过 `chrome://inspect/#remote-debugging` 启用远程调试。

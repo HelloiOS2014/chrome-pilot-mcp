@@ -8,11 +8,33 @@ Chrome Pilot MCP connects to an already-running Chrome instance over CDP and exp
 
 ## Prerequisites
 
-### 1. Chrome Version
+### 1. Node.js / npx
+
+`npx` is used by Claude Code to launch the MCP subprocess. Confirm Node.js and npx are available first (Node `>= 18`):
+
+```bash
+node -v
+npx -v
+```
+
+If missing, install Node.js for your platform (it includes npx):
+
+```bash
+# macOS
+brew install node
+
+# Ubuntu / Debian
+sudo apt-get update && sudo apt-get install -y nodejs npm
+
+# Windows (PowerShell)
+winget install OpenJS.NodeJS.LTS
+```
+
+### 2. Chrome Version
 
 Chrome `>= 144` is required.
 
-### 2. Enable Remote Debugging
+### 3. Enable Remote Debugging
 
 Open the following page in Chrome:
 
@@ -22,7 +44,7 @@ chrome://inspect/#remote-debugging
 
 After remote debugging is enabled, Chrome writes a `DevToolsActivePort` file containing the debug port and WebSocket path. You usually need to enable it again after Chrome restarts.
 
-### 3. DevToolsActivePort Paths
+### 4. DevToolsActivePort Paths
 
 | Platform | Path |
 | --- | --- |
@@ -223,6 +245,22 @@ All tools return a shared error structure on failure:
 | `E999` | Internal error |
 
 ## FAQ
+
+### Q: `claude mcp add` succeeds but status is `Failed to connect`?
+
+Check runtime dependencies first:
+
+```bash
+which npx
+npx -v
+node -v
+```
+
+Then check the configured command and current status:
+
+```bash
+claude mcp get chrome-pilot
+```
 
 ### Q: Connection fails because DevToolsActivePort was not found?
 

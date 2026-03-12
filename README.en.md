@@ -58,6 +58,28 @@ npm start
 
 ## Prerequisites
 
+### Node.js / npx
+
+`npx` is used by Claude Code to launch the MCP subprocess. Confirm Node.js and npx are available first (Node `>= 18`):
+
+```bash
+node -v
+npx -v
+```
+
+If missing, install Node.js for your platform (it includes npx):
+
+```bash
+# macOS
+brew install node
+
+# Ubuntu / Debian
+sudo apt-get update && sudo apt-get install -y nodejs npm
+
+# Windows (PowerShell)
+winget install OpenJS.NodeJS.LTS
+```
+
 ### Chrome Version
 
 Chrome `>= 144` is required so remote debugging can be enabled from `chrome://inspect/#remote-debugging`.
