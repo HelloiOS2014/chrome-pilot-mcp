@@ -31,7 +31,7 @@ export const tools: Tool[] = [
         },
         format: {
           type: 'string',
-          enum: ['png', 'jpeg', 'webp'],
+          enum: ['png', 'jpeg'],
           description: 'Image format (default: png)',
         },
       },
@@ -93,7 +93,7 @@ export async function handleToolCall(
   switch (name) {
     case 'chrome_screenshot': {
       const page = await getPage(bm, args.tab_index as number | undefined);
-      const format = (args.format as 'png' | 'jpeg' | 'webp' | undefined) ?? 'png';
+      const format = (args.format as 'png' | 'jpeg' | undefined) ?? 'png';
       const fullPage = (args.full_page as boolean | undefined) ?? false;
       const quality = args.quality as number | undefined;
 
@@ -112,17 +112,15 @@ export async function handleToolCall(
           const buffer = await element.screenshot({
             type: format,
             quality: format === 'png' ? undefined : (quality ?? 80),
-            encoding: 'base64',
           });
-          base64 = typeof buffer === 'string' ? buffer : Buffer.from(buffer).toString('base64');
+          base64 = Buffer.from(buffer).toString('base64');
         } else {
           const buffer = await page.screenshot({
             type: format,
             quality: format === 'png' ? undefined : (quality ?? 80),
             fullPage,
-            encoding: 'base64',
           });
-          base64 = typeof buffer === 'string' ? buffer : Buffer.from(buffer).toString('base64');
+          base64 = Buffer.from(buffer).toString('base64');
         }
 
         return {
@@ -154,9 +152,8 @@ export async function handleToolCall(
             `Element not found: ${selector}`
           );
         }
-        html = await page.evaluate(
-          (el: Element, useOuter: boolean) => (useOuter ? el.outerHTML : el.innerHTML),
-          element,
+        html = await element.evaluate(
+          (el, useOuter) => (useOuter ? el.outerHTML : el.innerHTML),
           outer
         );
       } else {

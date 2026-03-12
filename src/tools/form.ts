@@ -96,10 +96,22 @@ export async function handleToolCall(
           await page.waitForSelector(field.selector, { timeout: 5000 });
           if (clearFirst) {
             // Triple-click to select all, then delete
-            await page.click(field.selector, { count: 3 });
+            await page.click(field.selector, { clickCount: 3 });
+            await new Promise(r => setTimeout(r, 50 + Math.random() * 100));
             await page.keyboard.press('Backspace');
+            await new Promise(r => setTimeout(r, 50 + Math.random() * 100));
           }
-          await page.type(field.selector, field.value);
+          // Human-like typing: per-character with random delays
+          await page.click(field.selector);
+          await new Promise(r => setTimeout(r, 30 + Math.random() * 50));
+          for (const ch of field.value) {
+            await page.keyboard.type(ch, { delay: 0 });
+            if (Math.random() < 0.05) {
+              await new Promise(r => setTimeout(r, 200 + Math.random() * 300));
+            } else {
+              await new Promise(r => setTimeout(r, 50 + Math.random() * 100));
+            }
+          }
           results.push({ selector: field.selector, success: true });
         } catch (err) {
           results.push({
@@ -128,12 +140,12 @@ export async function handleToolCall(
 
         let selected: string[];
         if (args.value !== undefined) {
-          selected = await page.select(selector, args.value as string);
+          selected = await page.selectOption(selector, args.value as string) as string[];
         } else if (args.label !== undefined) {
           // Select by label text
           const label = args.label as string;
           selected = await page.evaluate(
-            (sel: string, lbl: string) => {
+            ([sel, lbl]: [string, string]) => {
               const selectEl = document.querySelector(sel) as HTMLSelectElement;
               if (!selectEl) return [];
               const option = Array.from(selectEl.options).find(
@@ -146,8 +158,7 @@ export async function handleToolCall(
               }
               return [];
             },
-            selector,
-            label
+            [selector, label] as [string, string]
           );
         } else {
           throw new ChromeError(

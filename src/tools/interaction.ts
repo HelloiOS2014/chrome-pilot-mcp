@@ -120,6 +120,29 @@ export const tools: Tool[] = [
   },
 ];
 
+// Random integer in [min, max]
+function randInt(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+// Sleep helper
+function sleep(ms: number): Promise<void> {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+// Type text character-by-character with human-like timing
+async function humanType(page: import('patchright-core').Page, text: string): Promise<void> {
+  for (const ch of text) {
+    await page.keyboard.type(ch, { delay: 0 });
+    // 5% chance of a longer "thinking" pause
+    if (Math.random() < 0.05) {
+      await sleep(randInt(200, 500));
+    } else {
+      await sleep(randInt(50, 150));
+    }
+  }
+}
+
 async function getPage(bm: BrowserManager, tabIndex?: number) {
   if (tabIndex !== undefined) {
     return bm.getPageByIndex(tabIndex);
@@ -141,7 +164,19 @@ export async function handleToolCall(
         const selector = args.selector as string;
         try {
           await page.waitForSelector(selector, { timeout: 5000 });
-          await page.click(selector, { count: clickCount });
+          // Humanized click: move mouse to element center with jitter, pause, then click
+          const el = await page.$(selector);
+          const box = el ? await el.boundingBox() : null;
+          if (box) {
+            const x = box.x + box.width / 2 + randInt(-2, 2);
+            const y = box.y + box.height / 2 + randInt(-2, 2);
+            await page.mouse.move(x, y, { steps: randInt(5, 15) });
+            await sleep(randInt(20, 100));
+            await page.mouse.click(x, y, { clickCount });
+          } else {
+            // Fallback: direct click if boundingBox unavailable
+            await page.click(selector, { clickCount });
+          }
         } catch (err) {
           throw new ChromeError(
             ErrorCode.CLICK_FAILED,
@@ -152,9 +187,11 @@ export async function handleToolCall(
       }
 
       if (args.x !== undefined && args.y !== undefined) {
-        const x = args.x as number;
-        const y = args.y as number;
-        await page.mouse.click(x, y, { count: clickCount });
+        const x = (args.x as number) + randInt(-2, 2);
+        const y = (args.y as number) + randInt(-2, 2);
+        await page.mouse.move(x, y, { steps: randInt(5, 15) });
+        await sleep(randInt(20, 100));
+        await page.mouse.click(x, y, { clickCount });
         return { success: true, clicked: { x, y, click_count: clickCount } };
       }
 
@@ -167,17 +204,27 @@ export async function handleToolCall(
     case 'chrome_type': {
       const text = args.text as string;
       const page = await getPage(bm, args.tab_index as number | undefined);
-      const delay = (args.delay as number | undefined) ?? 0;
+      const userDelay = args.delay as number | undefined;
+      const useHumanDelay = userDelay === undefined || userDelay === 0;
 
       if (args.selector) {
         const selector = args.selector as string;
         try {
           await page.waitForSelector(selector, { timeout: 5000 });
           if (args.clear_first) {
-            await page.click(selector, { count: 3 }); // select all
+            await page.click(selector, { clickCount: 3 }); // select all
+            await sleep(randInt(50, 150));
             await page.keyboard.press('Backspace');
+            await sleep(randInt(50, 150));
           }
-          await page.type(selector, text, { delay });
+          if (useHumanDelay) {
+            // Click to focus, then type with human timing
+            await page.click(selector);
+            await sleep(randInt(30, 80));
+            await humanType(page, text);
+          } else {
+            await page.type(selector, text, { delay: userDelay });
+          }
         } catch (err) {
           throw new ChromeError(
             ErrorCode.TYPE_FAILED,
@@ -189,9 +236,15 @@ export async function handleToolCall(
           await page.keyboard.down('Meta');
           await page.keyboard.press('a');
           await page.keyboard.up('Meta');
+          await sleep(randInt(50, 150));
           await page.keyboard.press('Backspace');
+          await sleep(randInt(50, 150));
         }
-        await page.keyboard.type(text, { delay });
+        if (useHumanDelay) {
+          await humanType(page, text);
+        } else {
+          await page.keyboard.type(text, { delay: userDelay });
+        }
       }
 
       return { success: true, typed: text.length > 50 ? text.slice(0, 50) + '...' : text };
@@ -221,19 +274,16 @@ export async function handleToolCall(
 
       if (args.selector) {
         await page.evaluate(
-          (sel: string, dx: number, dy: number) => {
+          ([sel, dx, dy]: [string, number, number]) => {
             const el = document.querySelector(sel);
             if (el) el.scrollBy(dx, dy);
           },
-          args.selector as string,
-          deltaX,
-          deltaY
+          [args.selector as string, deltaX, deltaY] as [string, number, number]
         );
       } else {
         await page.evaluate(
-          (dx: number, dy: number) => window.scrollBy(dx, dy),
-          deltaX,
-          deltaY
+          ([dx, dy]: [number, number]) => window.scrollBy(dx, dy),
+          [deltaX, deltaY] as [number, number]
         );
       }
 
@@ -251,7 +301,7 @@ export async function handleToolCall(
           await page.keyboard.down(mod as 'Shift' | 'Control' | 'Alt' | 'Meta');
           modsDown.push(mod);
         }
-        await page.keyboard.press(key as Parameters<typeof page.keyboard.press>[0]);
+        await page.keyboard.press(key);
       } finally {
         for (const mod of [...modsDown].reverse()) {
           await page.keyboard.up(mod as 'Shift' | 'Control' | 'Alt' | 'Meta').catch(() => {});

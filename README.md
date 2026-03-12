@@ -2,7 +2,7 @@
 
 MCP server for controlling an already-running Chrome browser via CDP (Chrome DevTools Protocol).
 
-**核心优势：** 连接已有的 Chrome 实例，保留登录态，无需重新启动浏览器。
+**核心优势：** 连接已有的 Chrome 实例，保留登录态，无需重新启动浏览器。基于 [patchright-core](https://github.com/AjjayK/patchright)（Playwright 反检测 fork），从源码层面消除 `Runtime.enable` 等 CDP 泄露，通过主流反自动化检测。
 
 ## 安装
 

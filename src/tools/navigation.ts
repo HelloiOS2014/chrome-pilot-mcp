@@ -23,7 +23,7 @@ export const tools: Tool[] = [
         },
         wait_until: {
           type: 'string',
-          enum: ['load', 'domcontentloaded', 'networkidle0', 'networkidle2'],
+          enum: ['load', 'domcontentloaded', 'networkidle'],
           description: 'When to consider navigation complete (default: load)',
         },
       },
@@ -95,7 +95,7 @@ export async function handleToolCall(
 
       try {
         const response = await page.goto(url, {
-          waitUntil: waitUntil as 'load' | 'domcontentloaded' | 'networkidle0' | 'networkidle2',
+          waitUntil: waitUntil as 'load' | 'domcontentloaded' | 'networkidle',
           timeout: 30000,
         });
         return {
@@ -134,16 +134,17 @@ export async function handleToolCall(
 
     case 'chrome_reload': {
       const page = await getPage(bm, args.tab_index as number | undefined);
-      // Note: Puppeteer's page.reload() doesn't support ignoreCache directly,
-      // so we use the CDP protocol for cache bypass if needed
+      // For ignore_cache, use CDP session via Playwright's official API
       if (args.ignore_cache) {
-        const client = await page.createCDPSession();
         try {
+          const client = await page.context().newCDPSession(page);
           await client.send('Network.setCacheDisabled', { cacheDisabled: true });
           await page.reload({ timeout: 30000 });
-        } finally {
           await client.send('Network.setCacheDisabled', { cacheDisabled: false }).catch(() => {});
           await client.detach().catch(() => {});
+        } catch {
+          // Fallback: reload without cache bypass
+          await page.reload({ timeout: 30000 });
         }
       } else {
         await page.reload({ timeout: 30000 });
